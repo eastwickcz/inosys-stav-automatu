@@ -77,18 +77,20 @@ def main():
         # Přechod na stránku správce automatů po přihlášení
         driver.get("http://monitor.inosys.cz/spravce-automatu/")
 
-        # Vyhledání konkrétního automatu a kontrola jeho stavu
+        # Vyhledání tabulky s automaty a kontrola stavu automatů
         wait = WebDriverWait(driver, 10)
         try:
-            # Hledáme prvek s ID 'aut_76' a třídou 'red' nebo 'orange', což znamená, že je problém
-            element = wait.until(EC.presence_of_element_located((By.XPATH, "//tr[@id='aut_76']/td[@class='red' or @class='orange']")))
-            if element:
-                # Automat není v pořádku, poslat email
-                status_text = element.text
-                message = f"Automat OC Lužiny Praha - Poke shop má problém: {status_text}"
-                send_email(message)
+            table = wait.until(EC.presence_of_element_located((By.XPATH, "//table[@class='table table-hover tbl_uzivatelu']")))
+            rows = table.find_elements(By.TAG_NAME, "tr")
+            for row in rows:
+                # Kontrolujeme, jestli některý <td> má třídu 'red' nebo 'orange', což znamená problém
+                status_cells = row.find_elements(By.XPATH, ".//td[@class='red' or @class='orange']")
+                for cell in status_cells:
+                    status_text = cell.text
+                    message = f"Automat má problém: {status_text}"
+                    send_email(message)
         except TimeoutException:
-            print("Automat je v pořádku nebo nebyl nalezen element.")
+            print("Automaty jsou v pořádku nebo nebyla nalezena tabulka.")
 
     except Exception as e:
         print(f"Nastala chyba: {e}")
